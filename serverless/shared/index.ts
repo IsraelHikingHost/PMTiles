@@ -3,6 +3,7 @@ export type SliceInput = {
   name: string;
   tile?: [number, number, number];
   ext: string;
+  sourceName?: string;
 };
 
 export const pmtiles_path = (name: string, setting?: string): string => {

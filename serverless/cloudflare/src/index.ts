@@ -22,6 +22,8 @@ interface Env {
   PUBLIC_HOSTNAME?: string;
   // biome-ignore lint: config name
   SLICED_SOURCES?: string;
+  // biome-ignore lint: config name
+  PYRAMID_SOURCES?: string;
 }
 
 class KeyNotFoundError extends Error {}
@@ -101,17 +103,29 @@ const isSourceSliced = (targetName: string, env: Env): boolean => {
   );
 };
 
+const isSourcePyramid = (targetName: string | undefined, env: Env): boolean => {
+  return (
+    !!targetName &&
+    typeof env.PYRAMID_SOURCES !== "undefined" &&
+    env.PYRAMID_SOURCES.split(",").includes(targetName)
+  );
+};
+
 const slice = (input: SliceInput, env: Env): SliceInput => {
+  const output = {
+    ...input,
+    sourceName: input.name,
+  };
   if (!input.ok || !input.tile || !isSourceSliced(input.name, env)) {
-    return input;
+    return output;
   }
 
   const [z, x, y] = input.tile;
 
   if (z < 7) {
     return {
-      ...input,
-      name: `${input.name}-6`,
+      ...output,
+      name: `${output.name}-6`,
     };
   }
 
@@ -120,8 +134,8 @@ const slice = (input: SliceInput, env: Env): SliceInput => {
   const nameY = y >> shift;
 
   return {
-    ...input,
-    name: `7/${nameX}/${nameY}/${input.name}+7-${nameX}-${nameY}`,
+    ...output,
+    name: `7/${nameX}/${nameY}/${output.name}+7-${nameX}-${nameY}`,
   };
 };
 
@@ -135,7 +149,10 @@ export default {
       return new Response(undefined, { status: 405 });
 
     const url = new URL(request.url);
-    const { ok, name, tile, ext } = slice(tile_path(url.pathname), env);
+    const { ok, name, tile, ext, sourceName } = slice(
+      tile_path(url.pathname),
+      env
+    );
 
     const cache = caches.default;
 
@@ -269,6 +286,9 @@ export default {
 
       if (tiledata) {
         return cacheableResponse(tiledata.data, cacheableHeaders, 200);
+      }
+      if (isSourcePyramid(sourceName, env)) {
+        return cacheableResponse(undefined, cacheableHeaders, 418);
       }
       return cacheableResponse(undefined, cacheableHeaders, 204);
     } catch (e) {
