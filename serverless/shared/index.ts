@@ -1,3 +1,11 @@
+export type SliceInput = {
+  ok: boolean;
+  name: string;
+  tile?: [number, number, number];
+  ext: string;
+  sourceName?: string;
+};
+
 export const pmtiles_path = (name: string, setting?: string): string => {
   if (setting) {
     return setting.replaceAll("{name}", name);
@@ -6,18 +14,11 @@ export const pmtiles_path = (name: string, setting?: string): string => {
 };
 
 const TILE =
-  /^\/(?<NAME>[0-9a-zA-Z\/!\-_\.\*\'\(\)]+)\/(?<Z>\d+)\/(?<X>\d+)\/(?<Y>\d+).(?<EXT>[a-z]+)$/;
+  /^\/(?<NAME>[0-9a-zA-Z\/!\-_\.\*\'\(\)+]+)\/(?<Z>\d+)\/(?<X>\d+)\/(?<Y>\d+).(?<EXT>[a-z]+)$/;
 
-const TILESET = /^\/(?<NAME>[0-9a-zA-Z\/!\-_\.\*\'\(\)]+).json$/;
+const TILESET = /^\/(?<NAME>[0-9a-zA-Z\/!\-_\.\*\'\(\)+]+).json$/;
 
-export const tile_path = (
-  path: string
-): {
-  ok: boolean;
-  name: string;
-  tile?: [number, number, number];
-  ext: string;
-} => {
+export const tile_path = (path: string): SliceInput => {
   const tile_match = path.match(TILE);
 
   if (tile_match) {
